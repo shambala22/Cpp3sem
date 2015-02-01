@@ -135,12 +135,13 @@ NodePayload& Graph<NodePayload>::operator[](NodeHandle const &node) {
 
 template <typename NodePayload>
 void Graph<NodePayload>::dfs(NodeVisitor const &startNode, NodeVisitor const &endNode, NodeVisitor const &discoverNode) {
-    bool* visited = new bool[edges.size()];
-    std::fill_n(visited, edges.size(), false);
+    bool* visited = new bool[getNodesCount()];
+    std::fill_n(visited, getNodesCount(), false);
+    int* parent = new int[getNodesCount()];
+    std::fill_n(parent, getNodesCount(), -1);
     NodeHandle vertex;
     for (NodeHandle v = 0; v<edges.size(); v++) {
         vertex = v;
-
         if (!visited[vertex]) {
             std::stack<NodeHandle> stack;
             stack.push(vertex);
@@ -148,14 +149,25 @@ void Graph<NodePayload>::dfs(NodeVisitor const &startNode, NodeVisitor const &en
                 vertex = stack.top();
                 stack.pop();
                 startNode(vertex);
+                discoverNode(vertex);
+                bool first = true;
                 for (auto i = edges[vertex].begin(); i != edges[vertex].end(); i++) {
-                    discoverNode(*i);
+
                     if (!visited[*i]) {
                         visited[*i] = true;
+                        if (first) {
+                            parent[*i] = vertex;
+                            first = false;
+                        }
                         stack.push(*i);
                     }
                 }
-                endNode(vertex);
+                if (first) {
+                    endNode(vertex);
+                }
+                if (parent[vertex]!=-1) {
+                    endNode(parent[vertex]);
+                }
             }
         }
     }
