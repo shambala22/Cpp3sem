@@ -98,7 +98,6 @@ void Graph<NodePayload>::addEdge(NodeHandle const& first, NodeHandle const& seco
         throw new std::exception();
     }
     this->edges[first-1].push_back(second-1);
-    this->edges[second-1].push_back(first-1);
     edges_counter++;
 }
 
@@ -145,28 +144,35 @@ void Graph<NodePayload>::dfs(NodeVisitor const &startNode, NodeVisitor const &en
         if (!visited[vertex]) {
             std::stack<NodeHandle> stack;
             stack.push(vertex);
+            discoverNode(vertex);
             while (!stack.empty()) {
                 vertex = stack.top();
                 stack.pop();
                 startNode(vertex);
-                discoverNode(vertex);
                 bool first = true;
+                std::stack<NodeHandle> extraStack;
                 for (auto i = edges[vertex].begin(); i != edges[vertex].end(); i++) {
-
+                    discoverNode(*i);
                     if (!visited[*i]) {
                         visited[*i] = true;
-                        if (first) {
-                            parent[*i] = vertex;
-                            first = false;
-                        }
-                        stack.push(*i);
+                        extraStack.push(*i);
                     }
                 }
-                if (first) {
-                    endNode(vertex);
+                while (!extraStack.empty()) {
+                    NodeHandle v = extraStack.top();
+                    if (first) {
+                        parent[v] = vertex;
+                        first = false;
+                    }
+                    stack.push(v);
+                    extraStack.pop();
                 }
-                if (parent[vertex]!=-1) {
-                    endNode(parent[vertex]);
+                if (first) {
+                    parent[0] = -1;
+                    while (vertex!=-1) {
+                        endNode(vertex);
+                        vertex = parent[vertex];
+                    }
                 }
             }
         }
